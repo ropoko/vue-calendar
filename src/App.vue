@@ -2,7 +2,8 @@
 	<div class="calendar-container">
 		<Header
 			:currentDate="currentDate"
-			@setView="setView"
+			:currentView="currentView"
+			@setView="currentView = $event"
 			@changeDay="handleChangeDay"
 			@changeWeek="handleChangeWeek"
 		/>
@@ -17,7 +18,7 @@
 
 		<div class="calendar-grid" :class="`view-${currentView}`">
 			<div class="time-axis">
-				<div class="time-slot" v-for="time in timeSlots" :key="time">
+				<div class="time-slot" v-for="(time, index) in timeSlots" :key="index">
 					{{ time }}
 				</div>
 			</div>
@@ -29,32 +30,42 @@
 				<div
 					class="day-header"
 					v-for="day in displayDays"
-					:key="day.date"
+					:key="day.monthDay"
 					:class="{ 'current-day': day.isCurrent }"
 				>
 					<div class="day-name">{{ day.name }}</div>
-					<div class="day-date">{{ day.date }}</div>
+					<div class="day-date">{{ day.fullDate.getDate() }}</div>
 				</div>
 			</div>
 
 			<div class="calendar-body" :class="`body-${currentView}`">
 				<template v-if="currentView === 'day' || currentView === 'today'">
-					<div class="time-column-day" v-for="time in timeSlots" :key="time">
+					<div
+						class="time-column-day"
+						v-for="(time, index) in timeSlots"
+						:key="index"
+					>
 						<div class="day-column-single">
 							<template
-								v-for="(event, index) in getEventsForDayAndTime(
+								v-for="(event, eventIndex) in getEventsForDayAndTime(
 									currentDate,
 									time
 								)"
-								:key="event.id"
+								:key="eventIndex"
 							>
-								<div class="event-block" @click="handleSelectEvent(event)">
+								<div
+									class="event-block"
+									:style="
+										getEventBlockStyle(
+											event.startTime,
+											event.endTime,
+											eventIndex
+										)
+									"
+									@click="handleSelectEvent(event)"
+								>
 									<div class="event-content">
-										<header>
-											<p>ahudias</p>
-										</header>
-
-										<p>name</p>
+										<strong>{{ event.title }}</strong>
 									</div>
 								</div>
 							</template>
@@ -63,15 +74,19 @@
 				</template>
 
 				<template v-else>
-					<div class="time-column" v-for="time in timeSlots" :key="time">
+					<div
+						class="time-column"
+						v-for="time in timeSlots"
+						:key="time.getTime().toString()"
+					>
 						<div
 							class="day-column"
 							v-for="day in displayDays"
-							:key="`${day.date}-${time}`"
+							:key="day.fullDate.getTime().toString()"
 						>
 							<template
 								v-for="(event, index) in getVisibleEventsForDayAndTime(
-									day.date,
+									day.fullDate,
 									time
 								)"
 								:key="index"
@@ -84,26 +99,22 @@
 									@click="handleSelectEvent(event)"
 								>
 									<div class="event-content">
-										<header>
-											<p>ahudias</p>
-										</header>
-
-										<p>name</p>
+										<strong>{{ event.title }}</strong>
 									</div>
 								</div>
 
-								<!-- <div
-									v-if="getHiddenEventsCount(day.date, time) > 0"
+								<div
+									v-if="getHiddenEventsCount(day.fullDate, time) > 0"
 									class="event-overflow"
 									:style="getHiddenEventsStyle()"
-									@click="handleShowAllEvents(day.date, time)"
+									@click="handleShowAllEvents(time)"
 								>
 									<div class="event-content">
 										<div class="event-overflow-text">
-											+{{ getHiddenEventsCount(day.date, time) }} more
+											+{{ getHiddenEventsCount(day.fullDate, time) }} more
 										</div>
 									</div>
-								</div> -->
+								</div>
 							</template>
 						</div>
 					</div>
@@ -114,71 +125,67 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, type CSSProperties } from "vue";
 import {
 	dayNames,
-	monthNames,
 	type CalendarEvent,
 	type DirectionTypes,
+	type ViewTypes,
 } from "./types";
 
 import Header from "./components/Header.vue";
 
-const currentView = ref("today");
+const currentView = ref<ViewTypes>("today");
 const currentDate = ref(new Date());
-
-// const intelligenceStore = useIntelligenceStore();
 
 const events = ref<CalendarEvent[]>([
 	{
-		startTime: new Date("2025-10-31T07:00:00"),
-		endTime: new Date("2025-10-31T08:00:00"),
+		startTime: new Date("2025-11-07T07:30:00"),
+		endTime: new Date("2025-11-07T08:20:00"),
 		title: "Event 1",
 	},
 	{
-		startTime: new Date("2025-10-30T10:00:00"),
-		endTime: new Date("2025-10-31T12:00:00"),
+		startTime: new Date("2025-11-07T10:00:00"),
+		endTime: new Date("2025-11-07T12:00:00"),
 		title: "Event 2",
 	},
 	{
-		startTime: new Date("2025-10-31T10:00:00"),
-		endTime: new Date("2025-10-31T14:00:00"),
+		startTime: new Date("2025-11-07T10:00:00"),
+		endTime: new Date("2025-11-07T14:00:00"),
 		title: "Event 3",
 	},
 ]);
 
 const maxEventsToShow = 1;
 
+// TODO: later might want to add a prop
+// to define `start` - `end` time
 const timeSlots = computed(() => {
-	const timeSlots = [];
+	const timeSlots: Date[] = [];
 
-	// start from 7 so the list is not super long
-	for (let i = 7; i <= 12; i++) {
-		timeSlots.push(`${i}:00AM`.padStart(7, "0"));
-	}
+	const baseDate = new Date(currentDate.value);
+	baseDate.setHours(0, 0, 0, 0);
 
-	for (let i = 1; i <= 12; i++) {
-		timeSlots.push(`${i}:00PM`.padStart(7, "0"));
+	for (let i = 0; i <= 24; i++) {
+		const slot = new Date(baseDate);
+		slot.setHours(i, 0, 0, 0);
+		timeSlots.push(slot);
 	}
 
 	return timeSlots;
 });
 
-const currentDayName = computed(() => {
-	return dayNames[currentDate.value.getDay()];
-});
+const currentDayName = computed(() => dayNames[currentDate.value.getDay()]);
 
-const currentDayDate = computed(() => {
-	return currentDate.value.getDate().toString();
-});
+const currentDayDate = computed(() => currentDate.value.getDate());
 
 const displayDays = computed(() => {
 	if (currentView.value === "day" || currentView.value === "today") {
 		return [
 			{
 				name: currentDayName.value,
-				date: currentDayDate.value,
-				fullDate: formatDate(currentDate.value),
+				fullDate: currentDate.value,
+				monthDay: currentDayDate.value,
 				isCurrent:
 					currentDate.value.toDateString() === new Date().toDateString(),
 			},
@@ -198,9 +205,9 @@ const displayDays = computed(() => {
 			date.setDate(startOfWeek.getDate() + i);
 
 			days.push({
+				fullDate: date,
 				name: dayNames[i],
-				date: date.getDate().toString(),
-				fullDate: formatDate(date),
+				monthDay: date.getDate(),
 				isCurrent: date.toDateString() === new Date().toDateString(),
 			});
 		}
@@ -217,9 +224,9 @@ const displayDays = computed(() => {
 		date.setDate(startOfWeek.getDate() + i);
 
 		days.push({
+			fullDate: date,
 			name: dayNames[i],
-			date: date.getDate().toString(),
-			fullDate: formatDate(date),
+			monthDay: date.getDate(),
 			isCurrent: date.toDateString() === new Date().toDateString(),
 		});
 	}
@@ -229,24 +236,13 @@ const displayDays = computed(() => {
 
 const handleSelectEvent = (event: any) => {
 	console.log(event);
-	// if (event && event.date) {
-	// 	const [year, month, day] = event.date.split("-").map(Number);
-	// 	currentDate.value = new Date(year, month - 1, day);
-	// }
-
-	// currentView.value = "day";
-	// eventSelected.value = event;
 };
 
-const setView = (view: any) => {
+const setView = (view: ViewTypes) => {
 	currentView.value = view;
 
 	if (view === "today") {
 		currentDate.value = new Date();
-	}
-
-	if (view === "week" || view === "mf") {
-		// eventSelected.value = null;
 	}
 };
 
@@ -270,62 +266,24 @@ const handleChangeDay = (direction: DirectionTypes) => {
 	currentDate.value = newDate;
 };
 
-const getEventsForDayAndTime = (day: any, time: string) => {
-	const getHour = (t: string) => {
-		const match = t.match(/^(\d{1,2}):/);
-		return match ? parseInt(match[1], 10) : null;
-	};
+const getEventsForDayAndTime = (date: Date, timeSlot: Date) =>
+	events.value.filter((event: CalendarEvent) => {
+		return (
+			event.startTime.toDateString() === date.toDateString() &&
+			event.startTime.getHours() === timeSlot.getHours()
+		);
+	});
 
-	const getAmPm = (t: string) => {
-		const match = t.match(/AM|PM$/);
-		return match ? match[0] : null;
-	};
-
-	const targetHour = getHour(time);
-	const targetAmPM = getAmPm(time);
-
-	if (currentView.value === "day" || currentView.value === "today") {
-		const fullDate = formatDate(currentDate.value);
-
-		const eventsForDay = events.value.filter((event: any) => {
-			return (
-				event.date === fullDate &&
-				getHour(event.startTime) === targetHour &&
-				getAmPm(event.startTime) === targetAmPM
-			);
-		});
-
-		return eventsForDay;
-	}
-
-	const dayObj = displayDays.value.find((d) => d.date === day);
-
-	if (dayObj) {
-		const eventsForDay = events.value.filter((event: any) => {
-			return (
-				event.date === dayObj.fullDate &&
-				getHour(event.startTime) === targetHour &&
-				getAmPm(event.startTime) === targetAmPM
-			);
-		});
-
-		return eventsForDay;
-	}
-
-	return [];
-};
-
-const formatDate = (date: Date) => {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
-};
-
-const getTimeSlotFromTime = (time: string) => {
-	const hour = time.split(":")[0];
-	const ampm = time.includes("AM") ? "AM" : "PM";
-	return `${hour}:00${ampm}`;
+const getTimeSlotFromTime = (time: Date) => {
+	const hour = time.getHours();
+	return new Date(
+		time.getFullYear(),
+		time.getMonth(),
+		time.getDate(),
+		hour,
+		0,
+		0
+	);
 };
 
 const getEventBlockStyle = (
@@ -336,41 +294,22 @@ const getEventBlockStyle = (
 	const isWeeklyView =
 		currentView.value === "week" || currentView.value === "mf";
 
-	const startTime24 = startTime.endsWith("PM")
-		? `${parseInt(startTime.split(":")[0] || "0", 10) + 12}`
-		: `${parseInt(startTime.split("AM")[0] || "0", 10)}`;
-
-	const hourStartTime = parseInt(startTime24.split(":")[0] || "0", 10);
-	const minutesStartTime = parseInt(
-		startTime.split(":")[1]?.slice(0, 2) || "0",
-		10
-	);
-
-	const endTime24 = endTime.endsWith("PM")
-		? `${parseInt(endTime.split(":")[0] || "0", 10) + 12}`
-		: `${parseInt(endTime.split("AM")[0] || "0", 10)}`;
-
-	const hourEndTime = endTime.includes("PM")
-		? parseInt(endTime24.split(":")[0] || "0", 10)
-		: parseInt(endTime.split(":")[0] || "0", 10);
-	const minutesEndTime = parseInt(
-		endTime.split(":")[1]?.slice(0, 2) || "0",
-		10
-	);
-
 	// 00min = 00px, 59min = 99px
-	const minutesStartPx = Math.round((minutesStartTime / 59) * 99);
-	const minutesEndPx = Math.round((minutesEndTime / 59) * 99);
+	const minutesStartPx = Math.round((startTime.getMinutes() / 59) * 99);
+	const minutesEndPx = Math.round((endTime.getMinutes() / 59) * 99);
 
-	const hourDiffPx = (hourEndTime - hourStartTime) * 100;
+	const hourDiffPx = (endTime.getHours() - startTime.getHours()) * 100;
 	const minutesDiffPx = minutesEndPx - minutesStartPx;
 
 	const heightPx = hourDiffPx + minutesDiffPx;
 
+	const paddingTop =
+		getHiddenEventsCount(currentDate.value, startTime) > 0 ? 25 : 0;
+
 	if (isWeeklyView) {
 		return {
 			position: "absolute",
-			top: `${Math.max(minutesStartPx, 25)}px`,
+			top: `${Math.max(minutesStartPx, paddingTop)}px`,
 			height: `${heightPx}px`,
 		};
 	}
@@ -384,55 +323,30 @@ const getEventBlockStyle = (
 
 	return {
 		position: "absolute",
-		top: `${Math.max(minutesStartPx, 25)}px`,
+		top: `${Math.max(minutesStartPx, 0)}px`,
 		height: `${heightPx}px`,
 		width: `${widthPercentage}%`,
 		left: `${leftPercentage}%`,
 	};
 };
 
-const getVisibleEventsForDayAndTime = (day: any, time: string) => {
-	const allEvents = getEventsForDayAndTime(day, time);
-
-	const visibleCount = Math.min(allEvents.length, maxEventsToShow);
-	return allEvents.slice(0, visibleCount);
+const getVisibleEventsForDayAndTime = (day: Date, time: Date) => {
+	return getEventsForDayAndTime(day, time).slice(0, maxEventsToShow);
 };
 
-const getHiddenEventsCount = (day: any, time: string) => {
-	const allEvents = getEventsForDayAndTime(day, time);
-	return allEvents.length - maxEventsToShow;
+const getHiddenEventsStyle = (): CSSProperties => ({
+	position: "absolute",
+	top: "0px",
+	height: "15px",
+});
+
+const getHiddenEventsCount = (day: Date, time: Date) => {
+	return getEventsForDayAndTime(day, time).length - maxEventsToShow;
 };
 
-const getHiddenEventsStyle = () => {
-	return {
-		position: "absolute",
-		top: "0px",
-		height: "25px",
-	};
-};
-
-const handleShowAllEvents = (day: any, time: string) => {
-	const allEvents = getEventsForDayAndTime(day, time);
-
-	if (allEvents.length > 0) {
-		const dayObj = displayDays.value.find((d) => d.date === day);
-
-		if (dayObj) {
-			const [year, month, dayNum] = dayObj.fullDate.split("-").map(Number);
-			currentDate.value = new Date(year!, month! - 1, dayNum);
-		}
-
-		currentView.value = "day";
-		// eventSelected.value = null;
-	}
-};
-
-const convert24HourTo12Hour = (time: string) => {
-	const hour = time.split(":")[0] || "0";
-	const minutes = time.split(":")[1] || "00";
-	const ampm = parseInt(hour) > 12 ? "PM" : "AM";
-	const hour12 = parseInt(hour) % 12 || 12;
-	return `${hour12}:${minutes}${ampm}`;
+const handleShowAllEvents = (time: Date) => {
+	setView("day");
+	currentDate.value = getTimeSlotFromTime(time);
 };
 </script>
 

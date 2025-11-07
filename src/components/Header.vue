@@ -54,14 +54,13 @@ import { monthNames, type DirectionTypes, type ViewTypes } from "../types";
 
 const props = defineProps<{
 	currentDate: Date;
+	currentView: ViewTypes;
 }>();
 
 const emit = defineEmits(["changeWeek", "changeDay", "setView"]);
 
-const currentView = ref<ViewTypes>("today");
-
 const handleChange = (direction: DirectionTypes) => {
-	if (currentView.value === "day" || currentView.value === "today") {
+	if (props.currentView === "day" || props.currentView === "today") {
 		emit("changeDay", direction);
 	} else {
 		emit("changeWeek", direction);
@@ -71,11 +70,11 @@ const handleChange = (direction: DirectionTypes) => {
 		const today = new Date().getDate();
 		const currentDay = new Date(props.currentDate).getDate();
 
-		if (currentDay !== today && currentView.value === "today") {
+		if (currentDay !== today && props.currentView === "today") {
 			setView("day");
 		}
 
-		if (currentDay === today && currentView.value === "day") {
+		if (currentDay === today && props.currentView === "day") {
 			setView("today");
 		}
 	});
@@ -83,7 +82,6 @@ const handleChange = (direction: DirectionTypes) => {
 
 const setView = (view: ViewTypes) => {
 	emit("setView", view);
-	currentView.value = view;
 };
 
 const currentMonthYear = computed(() => {
