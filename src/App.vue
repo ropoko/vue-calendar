@@ -559,11 +559,4 @@ const handleShowAllEvents = (time: Date) => {
 		text-align: center;
 	}
 }
-
-// .event-content header {
-//   gap: 4px;
-//   display: flex;
-//   align-items: center;
-//   justify-content: space-between;
-// }
 </style>
