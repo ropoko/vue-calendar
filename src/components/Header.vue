@@ -8,7 +8,7 @@
 			<button
 				class="view-btn"
 				:class="{ active: currentView === 'today' }"
-				@click="setView('today')"
+				@click="emit('setView', 'today')"
 			>
 				Today
 			</button>
@@ -16,7 +16,7 @@
 			<button
 				class="view-btn"
 				:class="{ active: currentView === 'day' }"
-				@click="setView('day')"
+				@click="emit('setView', 'day')"
 			>
 				Day
 			</button>
@@ -24,7 +24,7 @@
 			<button
 				class="view-btn"
 				:class="{ active: currentView === 'mf' }"
-				@click="setView('mf')"
+				@click="emit('setView', 'mf')"
 			>
 				M-F
 			</button>
@@ -32,24 +32,34 @@
 			<button
 				class="view-btn"
 				:class="{ active: currentView === 'week' }"
-				@click="setView('week')"
+				@click="emit('setView', 'week')"
 			>
 				Week
 			</button>
 
 			<button class="nav-btn" @click="handleChange('previous')">
-				<img src="../assets/arrow-left.svg" alt="arrow-left" />
+				<img
+					src="../assets/arrow-left.svg"
+					alt="arrow-left"
+					width="16"
+					height="16"
+				/>
 			</button>
 
 			<button class="nav-btn" @click="handleChange('next')">
-				<img src="../assets/arrow-right.svg" alt="arrow-left" />
+				<img
+					src="../assets/arrow-right.svg"
+					alt="arrow-right"
+					width="16"
+					height="16"
+				/>
 			</button>
 		</div>
 	</header>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineEmits, defineProps, nextTick } from "vue";
+import { computed, defineEmits, defineProps, nextTick } from "vue";
 import { monthNames, type DirectionTypes, type ViewTypes } from "../types";
 
 const props = defineProps<{
@@ -71,17 +81,13 @@ const handleChange = (direction: DirectionTypes) => {
 		const currentDay = new Date(props.currentDate).getDate();
 
 		if (currentDay !== today && props.currentView === "today") {
-			setView("day");
+			emit("setView", "day");
 		}
 
 		if (currentDay === today && props.currentView === "day") {
-			setView("today");
+			emit("setView", "today");
 		}
 	});
-};
-
-const setView = (view: ViewTypes) => {
-	emit("setView", view);
 };
 
 const currentMonthYear = computed(() => {

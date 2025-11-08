@@ -3,7 +3,7 @@
 		<Header
 			:currentDate="currentDate"
 			:currentView="currentView"
-			@setView="currentView = $event"
+			@setView="setView"
 			@changeDay="handleChangeDay"
 			@changeWeek="handleChangeWeek"
 		/>
@@ -19,7 +19,12 @@
 		<div class="calendar-grid" :class="`view-${currentView}`">
 			<div class="time-axis">
 				<div class="time-slot" v-for="(time, index) in timeSlots" :key="index">
-					{{ time }}
+					{{
+						time.toLocaleTimeString("en-US", {
+							hour: "2-digit",
+							minute: "2-digit",
+						})
+					}}
 				</div>
 			</div>
 
