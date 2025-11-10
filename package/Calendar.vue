@@ -363,6 +363,7 @@ const handleShowAllEvents = (time: Date) => {
 
 <style scoped lang="scss">
 .calendar-container {
+	width: 100%;
 	font-family: "Inter", sans-serif;
 	background: white;
 	border-radius: 0.5rem;
