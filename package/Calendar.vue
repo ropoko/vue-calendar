@@ -355,11 +355,13 @@ const handleShowAllEvents = (time: Date) => {
 };
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 :root {
 	--time-slot-height: 100px;
 }
+</style>
 
+<style scoped lang="scss">
 .calendar-container {
 	font-family: "Inter", sans-serif;
 	background: white;
