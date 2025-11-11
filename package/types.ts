@@ -37,4 +37,6 @@ export type ComponentEmits = {
 	changeView: [view: ViewTypes];
 };
 
-export type ComponentSlots = {};
+export type ComponentSlots = {
+	event?: (props: { event: CalendarEvent }) => any;
+};

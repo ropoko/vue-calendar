@@ -69,9 +69,11 @@
 									"
 									@click="handleSelectEvent(event)"
 								>
-									<div class="event-content">
-										<strong>{{ event.title }}</strong>
-									</div>
+									<slot name="event" :event="event">
+										<div class="event-content">
+											<strong>{{ event.title }}</strong>
+										</div>
+									</slot>
 								</div>
 							</template>
 						</div>
@@ -103,9 +105,11 @@
 									"
 									@click="handleSelectEvent(event)"
 								>
-									<div class="event-content">
-										<strong>{{ event.title }}</strong>
-									</div>
+									<slot name="event" :event="event">
+										<div class="event-content">
+											<strong>{{ event.title }}</strong>
+										</div>
+									</slot>
 								</div>
 
 								<div

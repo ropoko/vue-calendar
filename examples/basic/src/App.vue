@@ -49,7 +49,15 @@ const handleChangeView = (view: ViewTypes) => {
 			@selectEvent="handleSelectEvent"
 			@showAllEvents="handleShowAllEvents"
 			@changeView="handleChangeView"
-		/>
+		>
+			<template #event="{ event }">
+				<div>
+					<strong>{{ event.title }}</strong>
+					<br />
+					<small>using custom slot</small>
+				</div>
+			</template>
+		</VueCalendar>
 	</div>
 </template>
 
