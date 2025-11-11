@@ -1,6 +1,6 @@
 ## Changelog
 
-### 0.0.1
+### 0.1.0
 
 - Initial release
 - Multiple view modes (Today, Day, Week, M-F)
