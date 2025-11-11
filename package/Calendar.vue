@@ -328,11 +328,14 @@ const getEventBlockStyle = (
 	const widthPercentage = 100 / totalEvents;
 	const leftPercentage = index * widthPercentage;
 
+	const widthWithMargin =
+		widthPercentage - (totalEvents === 1 ? totalEvents * 2 : totalEvents);
+
 	return {
 		position: "absolute",
 		top: `${Math.max(minutesStartPx, 0)}px`,
 		height: `${heightPx}px`,
-		width: `${widthPercentage}%`,
+		width: `${widthWithMargin}%`,
 		left: `${leftPercentage}%`,
 	};
 };
@@ -537,7 +540,7 @@ const handleShowAllEvents = (time: Date) => {
 }
 
 .event-block {
-	width: 100%;
+	width: 98%; // little margin
 	cursor: pointer;
 	background: #dbeafe;
 	border: 1px solid #93c5fd;
