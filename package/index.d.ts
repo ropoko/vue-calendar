@@ -1,9 +1,11 @@
 import type { DefineComponent } from "vue";
-export type { ViewTypes, DirectionTypes, CalendarEvent } from "./types";
-
-export type ComponentProps = {};
-export type ComponentEmits = {};
-export type ComponentSlots = {};
+import type {
+	ComponentEmits,
+	ComponentProps,
+	ComponentSlots,
+	CalendarEvent,
+	ViewTypes,
+} from "./types";
 
 declare const Calendar: DefineComponent<
 	ComponentProps,
@@ -11,5 +13,12 @@ declare const Calendar: DefineComponent<
 	ComponentSlots
 >;
 
-export { Calendar };
+export {
+	Calendar,
+	type ComponentEmits,
+	type ComponentProps,
+	type ComponentSlots,
+	type CalendarEvent,
+	type ViewTypes,
+};
 export default Calendar;

@@ -130,48 +130,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, type CSSProperties } from "vue";
+import {
+	ref,
+	computed,
+	defineEmits,
+	defineProps,
+	type CSSProperties,
+} from "vue";
 import {
 	dayNames,
 	type CalendarEvent,
+	type ComponentEmits,
+	type ComponentProps,
 	type DirectionTypes,
 	type ViewTypes,
 } from "./types";
 
 import Header from "./components/Header.vue";
 
+const props = withDefaults(defineProps<ComponentProps>(), {
+	events: () => [],
+	startTime: 0,
+	endTime: 23,
+});
+
+const emit = defineEmits<ComponentEmits>();
+
 const currentView = ref<ViewTypes>("today");
 const currentDate = ref(new Date());
 
-const events = ref<CalendarEvent[]>([
-	{
-		startTime: new Date("2025-11-07T07:30:00"),
-		endTime: new Date("2025-11-07T08:20:00"),
-		title: "Event 1",
-	},
-	{
-		startTime: new Date("2025-11-07T10:00:00"),
-		endTime: new Date("2025-11-07T12:00:00"),
-		title: "Event 2",
-	},
-	{
-		startTime: new Date("2025-11-07T10:00:00"),
-		endTime: new Date("2025-11-07T14:00:00"),
-		title: "Event 3",
-	},
-]);
-
 const maxEventsToShow = 1;
 
-// TODO: later might want to add a prop
-// to define `start` - `end` time
 const timeSlots = computed(() => {
 	const timeSlots: Date[] = [];
 
 	const baseDate = new Date(currentDate.value);
 	baseDate.setHours(0, 0, 0, 0);
 
-	for (let i = 0; i <= 24; i++) {
+	for (let i = props.startTime; i <= props.endTime; i++) {
 		const slot = new Date(baseDate);
 		slot.setHours(i, 0, 0, 0);
 		timeSlots.push(slot);
@@ -240,7 +236,7 @@ const displayDays = computed(() => {
 });
 
 const handleSelectEvent = (event: any) => {
-	console.log(event);
+	emit("selectEvent", event);
 };
 
 const setView = (view: ViewTypes) => {
@@ -249,6 +245,8 @@ const setView = (view: ViewTypes) => {
 	if (view === "today") {
 		currentDate.value = new Date();
 	}
+
+	emit("changeView", view);
 };
 
 const handleChangeWeek = (direction: DirectionTypes) => {
@@ -272,7 +270,7 @@ const handleChangeDay = (direction: DirectionTypes) => {
 };
 
 const getEventsForDayAndTime = (date: Date, timeSlot: Date) =>
-	events.value.filter((event: CalendarEvent) => {
+	(props.events || []).filter((event: CalendarEvent) => {
 		return (
 			event.startTime.toDateString() === date.toDateString() &&
 			event.startTime.getHours() === timeSlot.getHours()
@@ -352,6 +350,8 @@ const getHiddenEventsCount = (day: Date, time: Date) => {
 const handleShowAllEvents = (time: Date) => {
 	setView("day");
 	currentDate.value = getTimeSlotFromTime(time);
+
+	emit("showAllEvents", time);
 };
 </script>
 

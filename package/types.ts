@@ -24,3 +24,17 @@ export type CalendarEvent = {
 
 	title?: string;
 };
+
+export type ComponentProps = {
+	events?: CalendarEvent[];
+	startTime?: number;
+	endTime?: number;
+};
+
+export type ComponentEmits = {
+	selectEvent: [event: CalendarEvent];
+	showAllEvents: [time: Date];
+	changeView: [view: ViewTypes];
+};
+
+export type ComponentSlots = {};
